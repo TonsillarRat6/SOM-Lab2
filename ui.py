@@ -1,11 +1,11 @@
-from tariefeenheden import Tariefeenheden
 import tkinter as tk
+from tariefeenheden import Tariefeenheden
 from pricing_table import PricingTable
 from creditcard import CreditCard
 from debitcard import DebitCard
 from coin_machine import IKEAMyntAtare2000
 from ui_info import UIPayment, UIClass, UITicketAmount, UIWay, UIDiscount, UIPayment, UIInfo
-
+from purchaseoverview import PurchaseOverview
 
 class UI(tk.Frame):
 
@@ -55,23 +55,28 @@ class UI(tk.Frame):
 			price += 0.50
 
 		# pay
-		if info.payment == UIPayment.CreditCard:
-			c = CreditCard()
-			c.connect()
-			ccid: int = c.begin_transaction(round(price, 2))
-			c.end_transaction(ccid)
-			c.disconnect()
-		elif info.payment == UIPayment.DebitCard:
-			d = DebitCard()
-			d.connect()
-			dcid: int = d.begin_transaction(round(price, 2))
-			d.end_transaction(dcid)
-			d.disconnect()
-		elif info.payment == UIPayment.Cash:
-			coin = IKEAMyntAtare2000()
-			coin.starta()
-			coin.betala(int(round(price * 100)))
-			coin.stoppa()
+
+		overview = PurchaseOverview()
+		if overview.show_overview(info.from_station, info.to_station, info.way, discount, info.payment, self.amount_tickets.get(), price):
+			if info.payment == UIPayment.CreditCard:
+				c = CreditCard()
+				c.connect()
+				ccid: int = c.begin_transaction(round(price, 2))
+				c.end_transaction(ccid)
+				c.disconnect()
+			elif info.payment == UIPayment.DebitCard:
+				d = DebitCard()
+				d.connect()
+				dcid: int = d.begin_transaction(round(price, 2))
+				d.end_transaction(dcid)
+				d.disconnect()
+			elif info.payment == UIPayment.Cash:
+				coin = IKEAMyntAtare2000()
+				coin.starta()
+				coin.betala(int(round(price * 100)))
+				coin.stoppa()
+		else:
+			overview.cancel_payment()
 
 #region UI Set-up below -- you don't need to change anything
 
