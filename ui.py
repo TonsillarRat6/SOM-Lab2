@@ -75,7 +75,7 @@ class UI(tk.Frame):
 		elif info.payment == UIPayment.Cash:
 			coin = CoinMachine()
 			coin.start_payment()
-			coin.coin_machine_payment(int(round(price * 100)))
+			coin.coin_machine_payment(price)
 			coin.stop_payment()
 
 	def call_printer(self):
@@ -165,10 +165,10 @@ class UI(tk.Frame):
 		
 	def add_tickets(self, amount_added):
 		add = self.amount_tickets.get() + amount_added
-		if add > 0:
+		if add > 1:
 			self.amount_tickets.set(add)
 		else:
-			self.amount_tickets.set(0)
+			self.amount_tickets.set(1)
 	
 	def on_click_pay(self):
 		tariefeenheden = self.get_tariefeenheden(self.get_ui_info())

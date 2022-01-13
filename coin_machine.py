@@ -9,4 +9,4 @@ class CoinMachine:
 		messagebox.showinfo(message = "Bye!")
 		
 	def coin_machine_payment(self, prijs: int):
-		messagebox.showinfo(message = f"{prijs} Centen")
+		messagebox.showinfo(message = f"{prijs} euro")

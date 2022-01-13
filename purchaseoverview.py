@@ -1,10 +1,10 @@
 from tkinter import messagebox
 
 class PurchaseOverview:
-
+	@staticmethod
 	def show_overview(self, from_station, to_station, way, payment, discount, amount_tickets, price, train_class):
 		#First, we make all the internal values "human readable", e.g. discount goes from 0.2, to 20, and way goes from 2, to return
-		type_ticket = ["single", "return"]
+		type_ticket = ["one-way", "return"]
 		payment_type = ["debit card", "credit card", "cash"]
 		discount *=100
 		class_list = ["Second class", "First class"]
