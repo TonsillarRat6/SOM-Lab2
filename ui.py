@@ -1,11 +1,14 @@
+from calendar import weekday
+from pickle import TRUE
 import tkinter as tk
 from tariefeenheden import Tariefeenheden
 from pricing_table import PricingTable
 from creditcard import CreditCard
 from debitcard import DebitCard
-from coin_machine import IKEAMyntAtare2000
+from coin_machine import CoinMachine
 from ui_info import UIPayment, UIClass, UITicketAmount, UIWay, UIDiscount, UIPayment, UIInfo
 from purchaseoverview import PurchaseOverview
+from printer import Printer
 
 class UI(tk.Frame):
 
@@ -13,70 +16,75 @@ class UI(tk.Frame):
 		tk.Frame.__init__(self, master)
 		self.widgets()
 
-	def handle_payment(self, info: UIInfo):
-
-		# **************************************
-		# Below is the code you need to refactor
-		# **************************************
-
-		# get number of tariefeenheden
+	def get_tariefeenheden(self, info:UIInfo):
 		tariefeenheden: int = Tariefeenheden.get_tariefeenheden(info.from_station, info.to_station)
+		return tariefeenheden
 
-		# # compute the column in the table based on choices
-		# table_column = 0
-		# if info.travel_class == UIClass.FirstClass:
-		# 	table_column = 3
-
-		# # then, on the discount
-		# if info.discount == UIDiscount.TwentyDiscount:
-		# 	table_column += 1
-		# elif info.discount == UIDiscount.FortyDiscount:
-		# 	table_column += 2
-
-		# compute the column in the table based on choices
+	def get_class(self, info: UIInfo):
 		train_class = 0
 		if info.travel_class == UIClass.FirstClass:
 			train_class = 1
+		return train_class
 
-		# then, on the discount
+	def get_discount(self, info: UIInfo):
 		discount = 0
 		if info.discount == UIDiscount.TwentyDiscount:
 			discount = 0.2
 		elif info.discount == UIDiscount.FortyDiscount:
 			discount = 0.4
+		return discount
 
-		# compute price
-		price: float = PricingTable.get_price (tariefeenheden, discount, train_class, self.amount_tickets.get())
+	def get_ticket_type(self, info: UIInfo):
+		way = 1
 		if info.way == UIWay.Return:
-			price *= 2
+			way = 2
+		return way
 
+	def calc_price(self, way, tariefeenheden, discount, train_class, amount_tickets):
+		price: float = PricingTable.get_price (tariefeenheden, discount, train_class, amount_tickets)
+		price *= way
+		return round(price,2)
+
+	def credit_card_price(self, info: UIInfo, price):
 		# add 50 cents if paying with credit card
 		if info.payment == UIPayment.CreditCard:
 			price += 0.50
-
-		# pay
-
+		return price
+		
+	def show_overview(self, info: UIInfo, discount, price, amount_tickets, train_class):
 		overview = PurchaseOverview()
-		if overview.show_overview(info.from_station, info.to_station, info.way, discount, info.payment, self.amount_tickets.get(), price):
-			if info.payment == UIPayment.CreditCard:
-				c = CreditCard()
-				c.connect()
-				ccid: int = c.begin_transaction(round(price, 2))
-				c.end_transaction(ccid)
-				c.disconnect()
-			elif info.payment == UIPayment.DebitCard:
-				d = DebitCard()
-				d.connect()
-				dcid: int = d.begin_transaction(round(price, 2))
-				d.end_transaction(dcid)
-				d.disconnect()
-			elif info.payment == UIPayment.Cash:
-				coin = IKEAMyntAtare2000()
-				coin.starta()
-				coin.betala(int(round(price * 100)))
-				coin.stoppa()
+		if overview.show_overview(info.from_station, info.to_station, info.way, info.payment, discount, amount_tickets, price, train_class):
+			return True
 		else:
-			overview.cancel_payment()
+			return False
+
+		
+	def do_payment(self, info: UIInfo, price):
+		if info.payment == UIPayment.CreditCard:
+			c = CreditCard()
+			c.connect()
+			ccid: int = c.begin_transaction(round(price, 2))
+			c.end_transaction(ccid)
+			c.disconnect()
+		elif info.payment == UIPayment.DebitCard:
+			d = DebitCard()
+			d.connect()
+			dcid: int = d.begin_transaction(round(price, 2))
+			d.end_transaction(dcid)
+			d.disconnect()
+		elif info.payment == UIPayment.Cash:
+			coin = CoinMachine()
+			coin.start_payment()
+			coin.coin_machine_payment(int(round(price * 100)))
+			coin.stop_payment()
+
+	def call_printer(self):
+		printer = Printer
+		printer.print_ticket(self)
+
+	def cancel_payment(self):
+		overview = PurchaseOverview
+		overview.cancel_payment
 
 #region UI Set-up below -- you don't need to change anything
 
@@ -155,7 +163,6 @@ class UI(tk.Frame):
 
 		self.pack(fill=tk.BOTH, expand=1)
 		
-
 	def add_tickets(self, amount_added):
 		add = self.amount_tickets.get() + amount_added
 		if add > 0:
@@ -164,7 +171,19 @@ class UI(tk.Frame):
 			self.amount_tickets.set(0)
 	
 	def on_click_pay(self):
-		self.handle_payment(self.get_ui_info())
+		tariefeenheden = self.get_tariefeenheden(self.get_ui_info())
+		discount = self.get_discount(self.get_ui_info())
+		train_class = self.get_class(self.get_ui_info())
+		amount_tickets = self.amount_tickets.get()
+		way = self.get_ticket_type(self.get_ui_info())
+
+		price = self.calc_price(way, tariefeenheden, discount, train_class, amount_tickets)
+		price = self.credit_card_price(self.get_ui_info(), price)
+		if self.show_overview(self.get_ui_info(), discount, price, amount_tickets, train_class):
+			self.do_payment(self.get_ui_info(), price)
+			self.call_printer()
+		else:
+			self.cancel_payment()
 
 	def get_ui_info(self) -> UIInfo:
 		return UIInfo(
@@ -184,10 +203,8 @@ class UI(tk.Frame):
 
 
 def main():
-
 	root = tk.Tk()
 	UI(root)
-
 	root.mainloop()
 
 

@@ -1,12 +1,12 @@
 from tkinter import messagebox
 
-class IKEAMyntAtare2000:
+class CoinMachine:
 
-	def starta(self):
+	def start_payment(self):
 		messagebox.showinfo(message = "Welcome to the Ikea coin-dispenser!")
 
-	def stoppa(self):
+	def stop_payment(self):
 		messagebox.showinfo(message = "Bye!")
 		
-	def betala(self, prijs: int):
+	def coin_machine_payment(self, prijs: int):
 		messagebox.showinfo(message = f"{prijs} Centen")
