@@ -1,7 +1,7 @@
 import tkinter as tk
 import random
 
-class Printer():
+class Printer:
     def print_ticket(self):
         printer_win = tk.Tk()
         printer_win.geometry("400x100")
